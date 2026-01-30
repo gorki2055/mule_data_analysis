@@ -1,0 +1,63 @@
+# Instructions to Run the Report Generator
+
+## Overview
+The program automatically discovers CSV files and photo files in the same folder and generates comprehensive battery analysis reports in PDF and Word formats.
+
+## How to Run
+1. Place all CSV data files and photo files in the same folder as `report_generator.py`.
+2. Open a terminal/PowerShell in that folder.
+3. Activate the virtual environment (if needed):
+   ```
+   .\venv\Scripts\activate
+   ```
+4. Run the script:
+   ```
+   python report_generator.py
+   ```
+5. Reports will be generated in a `reports/` subfolder automatically.
+
+## What the Script Does
+- **📊 Loads CSV data**: Processes battery system data from CSV files
+- **⏳ Resamples data**: Converts raw data into consistent time intervals
+- **Calculates metrics**: Computes electrical, thermal, and efficiency metrics
+- **📈 Generates plots**: Creates 13 different analysis plots
+- **📝 Builds reports**: Generates PDF and Word documents with all analysis and visualizations
+
+## Progress Indicators
+While running, you'll see messages like:
+- `📊 Processing file:` - Currently loading and processing a CSV file
+- `⏳ Resampling data...` - Converting raw data to fixed intervals
+- `✓ Metrics calculated successfully` - Metrics computation is complete
+- `📈 Generating plots...` - Creating visualization plots
+- `✓ Generated:` - Each plot file creation
+- `📝 Building PDF report...` - PDF document generation
+- `📝 Building Word report...` - Word document generation
+- `🎉 Report generation complete!` - All reports are done
+
+## Processing Time
+Processing may take 5-15 minutes depending on your computer and data size. Large datasets (1M+ rows) require more time for:
+- CSV parsing
+- Data resampling
+- Plot generation
+- Report compilation
+
+**Be patient and let the script complete** - you will see progress messages indicating what's happening.
+
+## Output Files
+Reports are saved in the `reports/` folder with timestamps:
+- `battery_report_YYYYMMDD_HHMMSS.pdf` - PDF report
+- `battery_report_YYYYMMDD_HHMMSS.docx` - Word report
+
+## Report Sections
+The generated reports include:
+1. **Electrical Performance** - Voltage range, peak power, average power (per shift)
+2. **Energy Efficiency** - Distance covered, total energy consumed (per shift)
+3. **SOC Analysis** - Initial/Final SOC and depletion (per shift)
+4. **Ride Mode Analysis** - Performance by ride mode with tables and plots
+5. **Thermal Performance** - Temperature analysis from sensors
+6. **Charge/Discharge Profile** - Battery status distribution analysis
+
+## Troubleshooting
+- **Missing dependencies**: Run `pip install -r requirements.txt`
+- **No CSV files found**: Ensure .csv files are in the same folder as the script
+- **Reports not generating**: Check the console for error messages and ensure you have write permissions
