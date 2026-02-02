@@ -134,6 +134,11 @@ def load_and_process_data(file_path):
         initial_len = len(df)
         df = df[df['Processed_Current'] <= 185]
         print(f"Filtered {initial_len - len(df)} rows with Current > 185A")
+
+        # Filter out current values less than -50A
+        initial_len = len(df)
+        df = df[df['Processed_Current'] >= -50]
+        print(f"Filtered {initial_len - len(df)} rows with Current < -50A")
     
     # Drop invalid timestamps
     df = df.dropna(subset=['timestamps']).copy()
@@ -164,6 +169,12 @@ def load_and_process_data(file_path):
             if not df[sensor].isna().all():
                 df[sensor] = medfilt(df[sensor], kernel_size=31)
     
+    # Filter Permissible Current Spikes
+    if 'Permissible_discharge_current' in df.columns:
+        # Use a kernel size of 11 for effective spike removal
+        df['Permissible_discharge_current'] = medfilt(df['Permissible_discharge_current'], kernel_size=11)
+        print("✓ Applied median filter to Permissible_discharge_current")
+
     return df
 
 def resample_data(df):
@@ -587,48 +598,116 @@ def generate_voltage_current_plot(df, output_dir):
     except Exception as e:
         print(f"⚠ Error generating voltage/current plot: {e}")
 
-def generate_permissible_current_plot(df, output_dir):
-    """Generate permissible vs battery current plot."""
+# def generate_permissible_current_plot(df, output_dir):
+#     """Generate permissible vs battery current plot."""
+#     try:
+#         if 'Permissible_discharge_current' in df.columns and 'Processed_Current' in df.columns:
+#             plt.figure(figsize=PLOT_STYLES['fig_size_wide'])
+
+#             plt.plot(df['timestamps'], df['Processed_Current'],
+#                      label="Battery Current (A)",
+#                      color=PLOT_STYLES['colors']['current'],
+#                      linewidth=PLOT_STYLES['line_width_thin'])
+
+#             plt.plot(df['timestamps'], df['Permissible_discharge_current'],
+#                      label="Permissible Discharge Current (A)",
+#                      color=PLOT_STYLES['colors']['permissible'],
+#                      linewidth=PLOT_STYLES['line_width_thin'],
+#                      linestyle='-')
+
+#             ntc_cols = [col for col in ['Ntc_Mos', 'Ntc_Com', 'Ntc_1', 'Ntc_2', 'Ntc_3', 'Ntc_4']
+#                         if col in df.columns]
+#             ntc_colors = ["#4a0404", '#1f77b4', '#2ca02c', "#ea954b", "#7c05ec", '#8c564b']
+
+#             for i, col in enumerate(ntc_cols):
+#                 plt.plot(df['timestamps'], df[col],
+#                          label=f"{col} (°C)",
+#                          color=ntc_colors[i % len(ntc_colors)],
+#                          linewidth=PLOT_STYLES['line_width_thin'],
+#                          linestyle='--')
+
+#             plt.title(f"Battery Current, Permissible Current & NTC Temps\nStart: {df['timestamps'].iloc[0]}")
+#             plt.xlabel("Time")
+#             plt.ylabel("Current (A) / Temperature (°C)")
+#             plt.legend(loc='best')
+#             plt.grid(True, alpha=PLOT_STYLES['grid_alpha'])
+#             plt.gcf().autofmt_xdate()
+#             plt.tight_layout()
+
+#             plt.savefig(os.path.join(output_dir, "permissible_vs_battery_current.png"),
+#                         dpi=PLOT_STYLES['dpi'])
+#             plt.close()
+#             print("✓ Generated: permissible_vs_battery_current.png")
+#     except Exception as e:
+#         print(f"⚠ Error generating permissible current plot: {e}")
+# from scipy.signal import medfilt
+# import os
+# import matplotlib.pyplot as plt
+
+def generate_permissible_current_plot(df, output_dir, kernel_size=5):
+    """Generate permissible vs filtered battery current plot with dual axes."""
     try:
         if 'Permissible_discharge_current' in df.columns and 'Processed_Current' in df.columns:
-            plt.figure(figsize=PLOT_STYLES['fig_size_wide'])
+            # Create figure and primary axis (Current)
+            fig, ax1 = plt.subplots(figsize=PLOT_STYLES['fig_size_wide'])
+            
+            # Apply Median Filter to Battery Current
+            # Ensure kernel_size is odd
+            filtered_current = medfilt(df['Processed_Current'], kernel_size=kernel_size)
 
-            plt.plot(df['timestamps'], df['Processed_Current'],
-                     label="Battery Current (A)",
+            # Plot Current on Left Axis
+            l1 = ax1.plot(df['timestamps'], filtered_current,
+                     label=f"Battery Current (Filtered, k={kernel_size})",
                      color=PLOT_STYLES['colors']['current'],
                      linewidth=PLOT_STYLES['line_width_thin'])
 
-            plt.plot(df['timestamps'], df['Permissible_discharge_current'],
+            l2 = ax1.plot(df['timestamps'], df['Permissible_discharge_current'],
                      label="Permissible Discharge Current (A)",
                      color=PLOT_STYLES['colors']['permissible'],
                      linewidth=PLOT_STYLES['line_width_thin'],
                      linestyle='-')
 
+            ax1.set_xlabel("Time")
+            ax1.set_ylabel("Current (A)", color=PLOT_STYLES['colors']['current'])
+            ax1.tick_params(axis='y', labelcolor=PLOT_STYLES['colors']['current'])
+            ax1.grid(True, alpha=PLOT_STYLES['grid_alpha'])
+
+            # Create secondary axis (Temperature)
+            ax2 = ax1.twinx()
+            
             ntc_cols = [col for col in ['Ntc_Mos', 'Ntc_Com', 'Ntc_1', 'Ntc_2', 'Ntc_3', 'Ntc_4']
                         if col in df.columns]
             ntc_colors = ["#4a0404", '#1f77b4', '#2ca02c', "#ea954b", "#7c05ec", '#8c564b']
-
+            
+            lines_temp = []
             for i, col in enumerate(ntc_cols):
-                plt.plot(df['timestamps'], df[col],
+                l = ax2.plot(df['timestamps'], df[col],
                          label=f"{col} (°C)",
                          color=ntc_colors[i % len(ntc_colors)],
                          linewidth=PLOT_STYLES['line_width_thin'],
                          linestyle='--')
+                lines_temp.extend(l)
 
-            plt.title(f"Battery Current, Permissible Current & NTC Temps\nStart: {df['timestamps'].iloc[0]}")
-            plt.xlabel("Time")
-            plt.ylabel("Current (A) / Temperature (°C)")
-            plt.legend(loc='best')
-            plt.grid(True, alpha=PLOT_STYLES['grid_alpha'])
+            ax2.set_ylabel("Temperature (°C)", color="#4a0404")
+            ax2.tick_params(axis='y', labelcolor="#4a0404")
+
+            # Combine legends
+            lines = l1 + l2 + lines_temp
+            labels = [l.get_label() for l in lines]
+            ax1.legend(lines, labels, loc='upper right', fontsize='small', ncol=2)
+
+            plt.title(f"Battery Current (Filtered) & Permissible Current vs NTC Temps\nStart: {df['timestamps'].iloc[0]}")
             plt.gcf().autofmt_xdate()
             plt.tight_layout()
 
             plt.savefig(os.path.join(output_dir, "permissible_vs_battery_current.png"),
                         dpi=PLOT_STYLES['dpi'])
             plt.close()
-            print("✓ Generated: permissible_vs_battery_current.png")
+            print(f"✓ Generated: permissible_vs_battery_current.png (Dual Axis, k={kernel_size})")
+            
     except Exception as e:
         print(f"⚠ Error generating permissible current plot: {e}")
+
 
 def generate_soc_time_plot(df, output_dir):
     """Generate SOC vs time plot."""

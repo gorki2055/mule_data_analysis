@@ -11,9 +11,9 @@ from scipy.signal import medfilt
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
-ROOT_DIR_DEFAULT = r"C:\Users\ADMIN\Desktop\MouseWithoutBorders\LOG\LOG\3ACF5792"
+ROOT_DIR_DEFAULT = r"C:\Users\ADMIN\Desktop\MouseWithoutBorders\LOG\LOG\2877D237"
 OUTPUT_ROOT_DEFAULT = r"C:\Users\ADMIN\Desktop\MouseWithoutBorders\LOG\LOG\REPORTS"
-OUTPUT_FILENAME = "mule1_test_summary.csv"
+OUTPUT_FILENAME = "mule2_test_summary.csv"
 
 GEAR_RATIO = 6.09
 WHEEL_RADIUS_M = 0.261
@@ -46,10 +46,11 @@ def extract_metadata(filename):
     Extracts Date and Shift from filename like 'MULE1_1-2-2026_MORNING.csv'
     Returns: (Date, Shift) or (None, None)
     """
-    # Pattern: MULE1_{Date}_{Shift}.csv (case insensitive)
-    # Handles: MULE1_1-2-2026_MORNING.csv or mule1_-1-2-2026_evening.csv
+    # Pattern: MULE2_{Date}_{Shift}.csv (case insensitive)
+    # Handles: MULE2_1-2-2026_MORNING.csv or MULE2_1-27-2026_DAY_RIDE.csv
     # Matches date like 1-2-2026 or -1-2-2026 (handling possible dash prefix in user examples)
-    pattern = r"MULE1_[-]*(\d+-\d+-\d+)_([A-Za-z]+)\.csv"
+    # Group 2 (Shift) now accepts letters and underscores to match "DAY_RIDE"
+    pattern = r"MULE2_[-]*(\d+-\d+-\d+)_([A-Za-z_]+)\.csv"
     match = re.search(pattern, filename, re.IGNORECASE)
     if match:
         return match.group(1), match.group(2).upper()
@@ -196,7 +197,8 @@ class BatchSummaryGUI:
         
         for root, _, files in os.walk(root_dir):
             for file in files:
-                if file.lower().startswith("mule1_") and file.lower().endswith(".csv"):
+                # Updated to check for MULE1 or MULE2 to be more flexible
+                if (file.lower().startswith("mule1_") or file.lower().startswith("mule2_")) and file.lower().endswith(".csv"):
                     full_path = os.path.join(root, file)
                     date_str, shift_str = extract_metadata(file)
                     
