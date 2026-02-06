@@ -4,9 +4,9 @@ from pathlib import Path
 import report_generator
 
 # Configuration
-ROOT_DIR = r"C:\Users\ADMIN\Desktop\MouseWithoutBorders\LOG\LOG\2877D237"
+ROOT_DIR = r"C:\Users\ADMIN\Desktop\MouseWithoutBorders\LOG\LOG\3ACF5792"
 OUTPUT_ROOT = r"C:\Users\ADMIN\Desktop\MouseWithoutBorders\LOG\LOG\REPORTS\mule2"
-TARGET_DATE = "1-30-2026"  # Set to None to process ALL dates. Example: "1-7-2026"
+TARGET_DATE = "1-1-2026"  # Set to None to process ALL dates. Example: "1-7-2026"
 
 def find_target_csvs(root_path, target_date=None):
     """

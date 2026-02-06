@@ -110,6 +110,7 @@ def load_and_process_data(file_path):
         if df['Battery_voltage'].mean() > 1000:
             df['Battery_voltage'] = df['Battery_voltage'] / 1000.0
         df = df[df['Battery_voltage'] <= 120]
+        df = df[df['Battery_voltage'] >= 20]
     
     # Map ride modes
     if 'MCU_Speed_Gear' in df.columns:
